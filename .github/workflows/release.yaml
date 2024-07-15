@@ -16,10 +16,12 @@ jobs:
       - name: Setup
         run: sudo apt-get update && sudo apt-get install gcc-riscv64-linux-gnu
       - name: Build
-        run: make
+        run: make INIT=exit && make INIT=shell
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            opensbi.bin
-            opensbi.elf
+            opensbi-linux-kernel-exit.bin
+            opensbi-linux-kernel-exit.elf
+            opensbi-linux-kernel-shell.bin
+            opensbi-linux-kernel-shell.elf

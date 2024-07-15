@@ -1,3 +1,7 @@
 opensbi
-opensbi.bin
-opensbi.elf
+linux
+*.bin
+*.elf
+*.cpio.gz
+ramfs-riscv/dev/*
+ramfs-riscv/init
