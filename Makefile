@@ -1,4 +1,4 @@
-all: opensbi-linux-kernel.bin
+all: opensbi-linux-kernel.bin opensbi.bin
 
 CROSS_COMPILE = riscv64-linux-gnu-
 PATCHES = ../mirage_firmware.patch
@@ -32,6 +32,11 @@ linux: initramfs
 		CROSS_COMPILE=$(CROSS_COMPILE) \
 		CONFIG_INITRAMFS_SOURCE=../initramfs_$(INIT).cpio.gz \
 		-j`nproc` 
+
+opensbi.bin: opensbi
+	make -C opensbi PLATFORM=generic FW_PAYLOAD=y FW_DYNAMIC=n FW_JUMP=n CROSS_COMPILE=$(CROSS_COMPILE) -j`nproc`
+	cp opensbi/build/platform/generic/firmware/fw_payload.bin opensbi.bin
+	cp opensbi/build/platform/generic/firmware/fw_payload.elf opensbi.elf
 
 opensbi-linux-kernel.bin: opensbi linux
 	make -C opensbi PLATFORM=generic \
