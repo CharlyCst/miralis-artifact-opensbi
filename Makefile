@@ -1,4 +1,4 @@
-all: opensbi-linux-kernel.bin opensbi.bin
+all: opensbi.bin opensbi-linux-kernel.bin
 
 CROSS_COMPILE = riscv64-linux-gnu-
 PATCHES = ../mirage_firmware.patch
@@ -17,6 +17,7 @@ opensbi:
 initramfs:
 	sudo cp init_$(INIT) ramfs-riscv/init
 	sudo chmod +x ramfs-riscv/init
+	mkdir -p ramfs-riscv/dev 
 	-cd ramfs-riscv/dev; \
 	sudo mknod null c 1 3; \
 	sudo mknod console c 5 1; \
@@ -26,7 +27,7 @@ initramfs:
 
 .PHONY: linux
 linux: initramfs
-	-git clone --depth 1 https://github.com/torvalds/linux.git
+	-git clone --depth 1 --branch v6.10 https://github.com/torvalds/linux.git
 	make -C linux ARCH=riscv CROSS_COMPILE=$(CROSS_COMPILE) defconfig
 	make -C linux ARCH=riscv \
 		CROSS_COMPILE=$(CROSS_COMPILE) \
