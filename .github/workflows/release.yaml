@@ -21,6 +21,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
+            opensbi.bin
+            opensbi.elf
             opensbi-linux-kernel-exit.bin
             opensbi-linux-kernel-exit.elf
             opensbi-linux-kernel-shell.bin
