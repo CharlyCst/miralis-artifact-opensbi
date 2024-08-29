@@ -5,7 +5,7 @@ LINUX = linux_shell linux_exit linux_driver
 all: opensbi.bin opensbi_jump.bin $(TARGETS_LINUX_BIN)
 
 CROSS_COMPILE = riscv64-linux-gnu-
-PATCHES = ../mirage_firmware.patch
+PATCHES = ../miralis_firmware.patch
 INIT = shell
 DRIVER_PATH = ../driver
 
@@ -13,7 +13,7 @@ DRIVER_PATH = ../driver
 
 ifeq ($(shell uname -o), Darwin)
 	CROSS_COMPILE = riscv64-elf-
-	PATCHES += ../mirage_firmware_macos.patch
+	PATCHES += ../miralis_firmware_macos.patch
 endif
 
 opensbi:

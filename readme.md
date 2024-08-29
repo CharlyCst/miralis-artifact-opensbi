@@ -1,6 +1,6 @@
 # OpenSBI Artifact
 
-This repository automates the build of [OpenSBI](https://github.com/riscv-software-src/opensbi/) for the purpose of generating artifacts that can be use for integration tests in the Mirage project.
+This repository automates the build of [OpenSBI](https://github.com/riscv-software-src/opensbi/) for the purpose of generating artifacts that can be use for integration tests in the Miralis project.
 
 ## How to release new artifacts
 
@@ -15,6 +15,8 @@ git push origin v0.1.0
 
 ### opensbi only:
 `opensbi`: simple opensbi with sample firmware.
+
+`opensbi_jump`: simple opensbi firmware that jump at adresse 0x80400000.
 
 ### opensbi with linux kernel as a payload:
 
