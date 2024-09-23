@@ -79,5 +79,20 @@ opensbi_jump.bin: opensbi
 	cp opensbi/build/platform/generic/firmware/fw_jump.bin opensbi_jump.bin
 	cp opensbi/build/platform/generic/firmware/fw_jump.elf opensbi_jump.elf
 
+
+u-boot:
+	git clone https://github.com/u-boot/u-boot.git
+	cd u-boot && git apply ../u-boot_patch.patch
+	cd u-boot && make CROSS_COMPILE=riscv64-linux-gnu- qemu-riscv64_smode_defconfig
+	cd u-boot && make CROSS_COMPILE=riscv64-linux-gnu-
+	cp u-boot/u-boot.bin u-boot.bin
+
+test:
+	qemu-system-riscv64 \
+	-machine virt -nographic -m 2048 -smp 4 \
+	-bios opensbi_jump.bin \
+	-device loader,file=u-boot/u-boot.bin,addr=0x80400000 
+
 clean:
-	-rm -rf opensbi linux *.bin *.elf *.cpio.gz
+	-rm -rf u-boot opensbi linux *.bin *.elf *.cpio.gz
+

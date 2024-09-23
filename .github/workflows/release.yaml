@@ -31,3 +31,4 @@ jobs:
             opensbi-linux-kernel-shell.elf
             opensbi-linux-kernel-driver.bin
             opensbi-linux-kernel-driver.elf
+            u-boot.bin
