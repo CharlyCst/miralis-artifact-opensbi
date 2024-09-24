@@ -81,8 +81,8 @@ opensbi_jump.bin: opensbi
 
 
 u-boot:
-	git clone https://github.com/u-boot/u-boot.git
-	cd u-boot && git apply ../u-boot_patch.patch
+	#git clone https://github.com/u-boot/u-boot.git
+	#cd u-boot && git apply ../u-boot_patch.patch
 	cd u-boot && make CROSS_COMPILE=riscv64-linux-gnu- qemu-riscv64_smode_defconfig
 	cd u-boot && make CROSS_COMPILE=riscv64-linux-gnu-
 	cp u-boot/u-boot.bin u-boot.bin
