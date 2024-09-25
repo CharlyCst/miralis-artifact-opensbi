@@ -86,6 +86,7 @@ u-boot:
 	cd u-boot && make CROSS_COMPILE=riscv64-linux-gnu- qemu-riscv64_smode_defconfig
 	cd u-boot && make CROSS_COMPILE=riscv64-linux-gnu-
 	cp u-boot/u-boot.bin u-boot.bin
+	cp u-boot.bin ../miralis/
 
 test:
 	qemu-system-riscv64 \
@@ -96,3 +97,5 @@ test:
 clean:
 	-rm -rf u-boot opensbi linux *.bin *.elf *.cpio.gz
 
+
+#  cargo run -- run --config ./config/test/qemu-virt-hello-world-payload.toml --firmware opensbi-jump
