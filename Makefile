@@ -1,8 +1,10 @@
 TARGETS_LINUX_BIN = opensbi-linux-exit.bin opensbi-linux-shell.bin opensbi-linux-driver.bin
 INIT_RAMFS = initramfs_shell initramfs_exit initramfs_driver
 LINUX = linux_shell linux_exit linux_driver
+OPEN_SBI = opensbi.bin opensbi_jump.bin
+UBOOT = u-boot u-boot-exit
 
-all: opensbi.bin opensbi_jump.bin $(TARGETS_LINUX_BIN)
+all:  $(UBOOT) $(OPEN_SBI) $(TARGETS_LINUX_BIN) 
 
 CROSS_COMPILE = riscv64-linux-gnu-
 PATCHES = ../miralis_firmware.patch
@@ -79,5 +81,30 @@ opensbi_jump.bin: opensbi
 	cp opensbi/build/platform/generic/firmware/fw_jump.bin opensbi_jump.bin
 	cp opensbi/build/platform/generic/firmware/fw_jump.elf opensbi_jump.elf
 
+
+u-boot:
+	git clone --depth 1 --branch v2024.10-rc5 https://github.com/u-boot/u-boot.git
+	cd u-boot && git apply ../u-boot_patch.patch
+	cd u-boot && make CROSS_COMPILE=riscv64-linux-gnu- qemu-riscv64_smode_defconfig
+	cd u-boot && make CROSS_COMPILE=riscv64-linux-gnu-
+	cp u-boot/u-boot.bin u-boot.bin
+	cp u-boot/u-boot u-boot.elf
+	rm -rf u-boot
+
+u-boot-exit:
+	git clone --depth 1 --branch v2024.10-rc5 https://github.com/u-boot/u-boot.git
+	cd u-boot && git apply ../u-boot_patch_ci_cd.patch
+	cd u-boot && make CROSS_COMPILE=riscv64-linux-gnu- qemu-riscv64_smode_defconfig
+	cd u-boot && make CROSS_COMPILE=riscv64-linux-gnu-
+	cp u-boot/u-boot.bin u-boot-exit.bin
+	cp u-boot/u-boot u-boot-exit.elf
+	rm -rf u-boot
+
+test-u-boot:
+	qemu-system-riscv64 \
+	-machine virt -nographic -m 2048 -smp 4 \
+	-bios opensbi_jump.bin \
+	-device loader,file=u-boot/u-boot.bin,addr=0x80400000 
+
 clean:
-	-rm -rf opensbi linux *.bin *.elf *.cpio.gz
+	-rm -rf u-boot opensbi linux *.bin *.elf *.cpio.gz

@@ -14,7 +14,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup
-        run: sudo apt-get update && sudo apt-get install gcc-riscv64-linux-gnu bc binutils bison dwarves flex git gnupg2 gzip libelf-dev libncurses5-dev libssl-dev make openssl pahole perl-base rsync tar xz-utils
+        run: sudo apt-get update && sudo apt-get install gcc-riscv64-linux-gnu libgnutls28-dev bc binutils bison dwarves flex git gnupg2 gzip libelf-dev libncurses5-dev libssl-dev make openssl pahole perl-base rsync tar xz-utils
       - name: Build
         run: make
       - name: Release
@@ -31,3 +31,7 @@ jobs:
             opensbi-linux-kernel-shell.elf
             opensbi-linux-kernel-driver.bin
             opensbi-linux-kernel-driver.elf
+            u-boot.bin
+            u-boot.elf
+            u-boot-exit.bin
+            u-boot-exit.elf

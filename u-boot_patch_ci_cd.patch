@@ -1,0 +1,52 @@
+diff --git a/board/emulation/qemu-riscv/Kconfig b/board/emulation/qemu-riscv/Kconfig
+index 9538c66e8b..cb3672efad 100644
+--- a/board/emulation/qemu-riscv/Kconfig
++++ b/board/emulation/qemu-riscv/Kconfig
+@@ -15,7 +15,7 @@ config SYS_CONFIG_NAME
+ config TEXT_BASE
+ 	default 0x81200000 if SPL
+ 	default 0x80000000 if !RISCV_SMODE
+-	default 0x80200000 if RISCV_SMODE && ARCH_RV64I
++	default 0x80400000 if RISCV_SMODE && ARCH_RV64I
+ 	default 0x80400000 if RISCV_SMODE && ARCH_RV32I
+ 
+ config SPL_TEXT_BASE
+diff --git a/common/cli.c b/common/cli.c
+index 4694a35cd0..fc2d55c60f 100644
+--- a/common/cli.c
++++ b/common/cli.c
+@@ -292,8 +292,34 @@ err:
+ }
+ #endif /* CONFIG_IS_ENABLED(OF_CONTROL) */
+ 
++#define MIRALIS_EID 0x08475bcd
++#define MIRALIS_SUCCESS 0x1
++
++inline __attribute__((always_inline)) void miralis_ecall() {
++
++    uint64_t value = MIRALIS_EID;
++    uint64_t fid = MIRALIS_SUCCESS;
++
++    asm volatile (
++            "mv a6, %[fid]\n"
++            "mv a7, %[val]\n"
++            "ecall"
++            :
++            : [fid] "r" (fid), [val] "r" (value)
++            : "a6", "a7"
++    );
++
++    return;
++}
++
++
+ void cli_loop(void)
+ {
++    // Print simple message
++    printf("We are going to exit U-Boot\n");
++    // & leave the bootloader
++    miralis_ecall();
++
+ 	bootstage_mark(BOOTSTAGE_ID_ENTER_CLI_LOOP);
+ #if CONFIG_IS_ENABLED(HUSH_PARSER)
+ 	if (gd->flags & GD_FLG_HUSH_MODERN_PARSER)

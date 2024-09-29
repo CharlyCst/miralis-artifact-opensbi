@@ -1,0 +1,13 @@
+diff --git a/board/emulation/qemu-riscv/Kconfig b/board/emulation/qemu-riscv/Kconfig
+index 9538c66e8b..cb3672efad 100644
+--- a/board/emulation/qemu-riscv/Kconfig
++++ b/board/emulation/qemu-riscv/Kconfig
+@@ -15,7 +15,7 @@ config SYS_CONFIG_NAME
+ config TEXT_BASE
+ 	default 0x81200000 if SPL
+ 	default 0x80000000 if !RISCV_SMODE
+-	default 0x80200000 if RISCV_SMODE && ARCH_RV64I
++	default 0x80400000 if RISCV_SMODE && ARCH_RV64I
+ 	default 0x80400000 if RISCV_SMODE && ARCH_RV32I
+ 
+ config SPL_TEXT_BASE
