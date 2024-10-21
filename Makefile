@@ -1,6 +1,6 @@
-TARGETS_LINUX_BIN = opensbi-linux-exit.bin opensbi-linux-shell.bin opensbi-linux-driver.bin
-INIT_RAMFS = initramfs_shell initramfs_exit initramfs_driver
-LINUX = linux_shell linux_exit linux_driver
+TARGETS_LINUX_BIN = opensbi-linux-exit.bin opensbi-linux-shell.bin opensbi-linux-driver.bin opensbi-linux-lock.bin
+INIT_RAMFS = initramfs_shell initramfs_exit initramfs_driver initramfs_lock
+LINUX = linux_shell linux_exit linux_driver linux_lock
 OPEN_SBI = opensbi.bin opensbi_jump.bin
 UBOOT = u-boot u-boot-exit
 
@@ -10,6 +10,7 @@ CROSS_COMPILE = riscv64-linux-gnu-
 PATCHES = ../miralis_firmware.patch
 INIT = shell
 DRIVER_PATH = ../driver
+LOCK_PATH = ./lock_module
 
 .PHONY: opensbi.bin opensbi_jump.bin driver $(LINUX) $(TARGETS_LINUX_BIN) clean
 
@@ -41,6 +42,10 @@ $(LINUX):
 		CONFIG_INITRAMFS_SOURCE=../initramfs_$(INIT).cpio.gz \
 		-j`nproc` 
 
+lock_module:
+	cd $(LOCK_PATH); make all
+	cp $(LOCK_PATH)/lock_module.ko ramfs-riscv/bin/lock_module.ko
+
 driver:
 	make -C linux M=$(DRIVER_PATH) modules ARCH=riscv CROSS_COMPILE=$(CROSS_COMPILE)
 	cp driver/driver.ko ramfs-riscv/driver.ko
@@ -57,6 +62,10 @@ linux_exit: initramfs_exit
 opensbi-linux-shell.bin: INIT=shell
 opensbi-linux-shell.bin: linux_shell
 linux_shell: initramfs_shell
+
+opensbi-linux-lock.bin: INIT=lock
+opensbi-linux-lock.bin: lock_module linux_lock
+linux_lock: initramfs_lock
 
 $(TARGETS_LINUX_BIN): opensbi
 	make -C opensbi PLATFORM=generic \
@@ -81,7 +90,6 @@ opensbi_jump.bin: opensbi
 	cp opensbi/build/platform/generic/firmware/fw_jump.bin opensbi_jump.bin
 	cp opensbi/build/platform/generic/firmware/fw_jump.elf opensbi_jump.elf
 
-
 u-boot:
 	git clone --depth 1 --branch v2024.10-rc5 https://github.com/u-boot/u-boot.git
 	cd u-boot && git apply ../u-boot_patch.patch
@@ -99,12 +107,6 @@ u-boot-exit:
 	cp u-boot/u-boot.bin u-boot-exit.bin
 	cp u-boot/u-boot u-boot-exit.elf
 	rm -rf u-boot
-
-test-u-boot:
-	qemu-system-riscv64 \
-	-machine virt -nographic -m 2048 -smp 4 \
-	-bios opensbi_jump.bin \
-	-device loader,file=u-boot/u-boot.bin,addr=0x80400000 
 
 clean:
 	-rm -rf u-boot opensbi linux *.bin *.elf *.cpio.gz

@@ -31,6 +31,8 @@ jobs:
             opensbi-linux-kernel-shell.elf
             opensbi-linux-kernel-driver.bin
             opensbi-linux-kernel-driver.elf
+            opensbi-linux-kernel-lock.bin
+            opensbi-linux-kernel-lock.elf
             u-boot.bin
             u-boot.elf
             u-boot-exit.bin
