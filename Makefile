@@ -10,9 +10,8 @@ CROSS_COMPILE = riscv64-linux-gnu-
 PATCHES = ../miralis_firmware.patch
 INIT = shell
 DRIVER_PATH = ../driver
-LOCK_PATH = ./lock_module
 
-.PHONY: opensbi.bin opensbi_jump.bin driver $(LINUX) $(TARGETS_LINUX_BIN) clean
+.PHONY: opensbi.bin opensbi_jump.bin driver lock_module $(LINUX) $(TARGETS_LINUX_BIN) clean
 
 ifeq ($(shell uname -o), Darwin)
 	CROSS_COMPILE = riscv64-elf-
@@ -43,8 +42,8 @@ $(LINUX):
 		-j`nproc` 
 
 lock_module:
-	cd $(LOCK_PATH); make all
-	cp $(LOCK_PATH)/lock_module.ko ramfs-riscv/bin/lock_module.ko
+	cd lock_module; make all
+	cp lock_module/lock_module.ko ramfs-riscv/lock_module.ko
 
 driver:
 	make -C linux M=$(DRIVER_PATH) modules ARCH=riscv CROSS_COMPILE=$(CROSS_COMPILE)
