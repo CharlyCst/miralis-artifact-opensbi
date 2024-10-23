@@ -1,0 +1,11 @@
+#!/bin/sh
+
+insmod /bin/lock_module.ko
+
+cat <<!
+
+Hello from Linux with protect payload policy!
+
+!
+
+poweroff -f
