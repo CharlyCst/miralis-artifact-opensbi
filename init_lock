@@ -1,6 +1,7 @@
 #!/bin/sh
 
 insmod /bin/lock_module.ko
+insmod /bin/benchmark_module.ko
 
 cat <<!
 

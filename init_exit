@@ -1,5 +1,7 @@
 #!/bin/sh
 
+insmod /bin/benchmark_module.ko
+
 cat <<!
 
 Hello from Linux!

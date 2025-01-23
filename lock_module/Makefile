@@ -6,5 +6,7 @@ KDIR=../linux
 
 all:
 	make ARCH=riscv CROSS_COMPILE=$(CROSS_COMPILE) -C $(KDIR) M=$(PWD) modules
+test:
+	make -C $(KDIR) M=$(PWD) modules
 clean:
 	make -C $(KDIR) M=$(PWD) clean
