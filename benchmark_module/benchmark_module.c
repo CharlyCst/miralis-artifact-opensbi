@@ -9,10 +9,11 @@
 #define MIRALIS_CURRENT_STATUS_FID 0x4
 
 #define PROC_NAME "miralis"
+#define PROC_NAME_ALL "miralis_all_cores"
 
 #define BUFFER_LEN 2
 
-#define STATS_CORE_0 0
+#define STATS_CORE_1 0
 #define STATS_CORE_ALL 1
 
 // Struct declarations
@@ -26,6 +27,8 @@ struct miralis_status {
 
 struct miralis_status get_measures(unsigned int);
 
+static ssize_t miralis_read_single(struct file *file, char __user *buffer, size_t count, loff_t *offset, unsigned int value);
+static ssize_t miralis_read_all(struct file *file, char __user *buffer, size_t count, loff_t *offset, unsigned int value);
 static ssize_t miralis_read(struct file *file, char __user *buffer, size_t count, loff_t *offset);
 static ssize_t miralis_write(struct file *file, const char __user *buffer, size_t count, loff_t *offset);
 
@@ -35,18 +38,23 @@ static void __exit unload_benchmark_module(void);
 // Global variables
 
 static const struct proc_ops miralis_fops = {
-    .proc_read = miralis_read,
+    .proc_read = miralis_read_single,
     .proc_write = miralis_write, 
 };
 
+static const struct proc_ops miralis_fops_all = {
+    .proc_read = miralis_read_all,
+    .proc_write = miralis_write,
+};
+
 static struct proc_dir_entry *miralis_dir_entry;
+static struct proc_dir_entry *miralis_dir_entry_all;
 
 // Functions definitions
 
-struct miralis_status get_measures(unsigned int core_id) {
+struct miralis_status get_measures(unsigned int measure_type) {
     uint64_t value = MIRALIS_EID;
     uint64_t fid = MIRALIS_CURRENT_STATUS_FID;
-    uint64_t arg = STATS_CORE_0;
 
     uint64_t firmware_exits = 0, world_switches = 0;
 
@@ -58,7 +66,7 @@ struct miralis_status get_measures(unsigned int core_id) {
         "mv %0, a0 \n" 
         "mv %1, a1 \n" 
         : "=r" (firmware_exits), "=r" (world_switches) 
-        : [fid] "r" (fid), [arg] "r" (arg),[val] "r" (value) 
+        : [fid] "r" (fid), [arg] "r" (measure_type),[val] "r" (value) 
         : "a6", "a7", "a0", "a1"            
     );
 
@@ -70,9 +78,18 @@ struct miralis_status get_measures(unsigned int core_id) {
     return status;
 }
 
-static ssize_t miralis_read(struct file *file, char __user *buffer, size_t count, loff_t *offset) {
-    // TODO: Ask the core dynamically until we get 0 values
-    struct miralis_status status = get_measures(0);
+static ssize_t miralis_read_single(struct file *file, char __user *buffer, size_t count, loff_t *offset) {
+    return miralis_read(file, buffer, count, offset, STATS_CORE_1);
+}
+
+static ssize_t miralis_read_all(struct file *file, char __user *buffer, size_t count, loff_t *offset) {
+    return miralis_read(file, buffer, count, offset, STATS_CORE_ALL);
+}
+
+static ssize_t miralis_read(struct file *file, char __user *buffer, size_t count, loff_t *offset, unsigned int type) {
+    assert!(type == STATS_CORE_1 || type == STATS_CORE_ALL);
+
+    struct miralis_status status = get_measures(type);
 
     uint64_t tmp_buffer[2];
     tmp_buffer[0] = status.firmware_exits;
@@ -110,6 +127,14 @@ static int __init load_benchmark_module(void)
 
     pr_info("Module loaded, /proc/%s created\n", PROC_NAME);
 
+    miralis_dir_entry_all = proc_create(PROC_NAME_ALL, 0666, NULL, &miralis_fops_all);
+    if (!miralis_dir_entry_all) {
+        pr_err("Failed to create /proc/%s\n", PROC_NAME_ALL);
+        return -ENOMEM;
+    }
+
+    pr_info("Module loaded, /proc/%s created\n", PROC_NAME_ALL);
+
     return 0; 
 }
 
@@ -120,6 +145,12 @@ static void __exit unload_benchmark_module(void)
     }
 
     printk(KERN_INFO "Miralis benchmark module unloaded, /proc/miralis removed\n");
+
+    if (miralis_dir_entry_all) {
+        remove_proc_entry(PROC_NAME_ALL, NULL);
+    }
+
+    printk(KERN_INFO "Miralis benchmark module unloaded, /proc/miralis_all_cores removed\n");
 }
 
 module_init(load_benchmark_module);
