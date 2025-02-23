@@ -15,11 +15,24 @@
 #define STATS_CORE_0 0
 #define STATS_CORE_ALL 1
 
+#define WORLD_SWITCH 0
+#define TIME_READ 1
+#define SET_TIMER 2
+#define MISALIGNED_OP 3
+#define IPI 4
+#define REMOTE_FENCE 5
+#define FIRMWARE_TRAP 6
+
 // Struct declarations
 
 struct miralis_status {
-    uint64_t firmware_exits;
     uint64_t world_switches;
+    uint64_t read_time;
+    uint64_t timer_request;
+    uint64_t misaligned_op;
+    uint64_t ipi_request;
+    uint64_t remote_fence;
+    uint64_t firmware_exits;
 };
 
 // Function declarations
@@ -43,42 +56,51 @@ static struct proc_dir_entry *miralis_dir_entry;
 
 // Functions definitions
 
-struct miralis_status get_measures(unsigned int core_id) {
+uint64_t get_measure(unsigned int category) {
     uint64_t value = MIRALIS_EID;
     uint64_t fid = MIRALIS_CURRENT_STATUS_FID;
-    uint64_t arg = STATS_CORE_0;
 
-    uint64_t firmware_exits = 0, world_switches = 0;
+    uint64_t output;
 
    asm volatile (
-        "mv a0, %[arg] \n"
+        "mv a0, %[category] \n"
         "mv a6, %[fid] \n"
         "mv a7, %[val] \n"
         "ecall \n"
-        "mv %0, a0 \n" 
-        "mv %1, a1 \n" 
-        : "=r" (firmware_exits), "=r" (world_switches) 
-        : [fid] "r" (fid), [arg] "r" (arg),[val] "r" (value) 
+        "mv %0, a0 \n"
+        : "=r" (output)
+        : [fid] "r" (fid), [category] "r" (category),[val] "r" (value)
         : "a6", "a7", "a0", "a1"            
     );
 
-    struct miralis_status status = {
-        .firmware_exits = firmware_exits,
-        .world_switches = world_switches
-    };
-
-    return status;
+   return output;
 }
 
 static ssize_t miralis_read(struct file *file, char __user *buffer, size_t count, loff_t *offset) {
     // TODO: Ask the core dynamically until we get 0 values
     struct miralis_status status = get_measures(0);
 
-    uint64_t tmp_buffer[2];
-    tmp_buffer[0] = status.firmware_exits;
-    tmp_buffer[1] = status.world_switches;
+    struct miralis_status res = {
+        .world_switches = get_measure(WORLD_SWITCH);
+        .read_time = get_measure(TIME_READ);
+        .timer_request = get_measure(SET_TIMER);
+        .misaligned_op = get_measure(MISALIGNED_OP)
+        .ipi_request = get_measure(IPI);
+        .remote_fence = get_measure(REMOTE_FENCE);
+        .firmware_exits = get_measure(FIRMWARE_TRAP),
+    };
 
-    printk(KERN_INFO "Firmware exits: %lld  | World switches: %lld\n", tmp_buffer[0], tmp_buffer[1]);
+    // TODO: Set the time properly
+    printk(KERN_INFO "[ %lld | %lld | %lld | %lld | %lld | %lld | %lld | %lld ]\n",
+        ktime_get_real_ns(),  
+        res.world_switches, 
+        res.read_time, 
+        res.timer_request, 
+        res.misaligned_op, 
+        res.ipi_request, 
+        res.remote_fence, 
+        res.firmware_exits
+    );
 
     if (*offset >= 16) {
         return 0; 
