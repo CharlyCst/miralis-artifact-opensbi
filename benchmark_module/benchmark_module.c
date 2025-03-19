@@ -37,7 +37,7 @@ struct miralis_status {
 
 // Function declarations
 
-struct miralis_status get_measures(unsigned int);
+uint64_t get_measure(uint64_t,uint64_t);
 
 static ssize_t miralis_read(struct file *file, char __user *buffer, size_t count, loff_t *offset);
 static ssize_t miralis_write(struct file *file, const char __user *buffer, size_t count, loff_t *offset);
@@ -46,7 +46,6 @@ static int __init load_benchmark_module(void);
 static void __exit unload_benchmark_module(void);
 
 // Global variables
-
 static const struct proc_ops miralis_fops = {
     .proc_read = miralis_read,
     .proc_write = miralis_write, 
@@ -55,56 +54,83 @@ static const struct proc_ops miralis_fops = {
 static struct proc_dir_entry *miralis_dir_entry;
 
 // Functions definitions
-
-uint64_t get_measure(unsigned int category) {
+uint64_t get_measure(uint64_t category, uint64_t hart_id) {
     uint64_t value = MIRALIS_EID;
     uint64_t fid = MIRALIS_CURRENT_STATUS_FID;
 
     uint64_t output;
 
-   asm volatile (
-        "mv a0, %[category] \n"
+    asm volatile (
+        "mv a0, %[hart_id] \n"
+        "mv a1, %[category] \n"
         "mv a6, %[fid] \n"
         "mv a7, %[val] \n"
         "ecall \n"
         "mv %0, a0 \n"
         : "=r" (output)
-        : [fid] "r" (fid), [category] "r" (category),[val] "r" (value)
+        : [fid] "r" (fid), [hart_id] "r" (hart_id), [category] "r" (category),[val] "r" (value)
         : "a6", "a7", "a0", "a1"            
     );
 
-   return output;
+    return output;
+}
+
+struct miralis_status get_status_for_core(unsigned int hart_id) {
+    struct miralis_status res = {
+        .world_switches = get_measure(WORLD_SWITCH, hart_id),
+        .read_time = get_measure(TIME_READ, hart_id),
+        .timer_request = get_measure(SET_TIMER, hart_id),
+        .misaligned_op = get_measure(MISALIGNED_OP, hart_id),
+        .ipi_request = get_measure(IPI, hart_id),
+        .remote_fence = get_measure(REMOTE_FENCE, hart_id),
+        .firmware_exits = get_measure(FIRMWARE_TRAP, hart_id)
+    };
+
+    return res;
 }
 
 static ssize_t miralis_read(struct file *file, char __user *buffer, size_t count, loff_t *offset) {
     // TODO: Ask the core dynamically until we get 0 values
-    struct miralis_status status = get_measures(0);
+    struct miralis_status res[4] = {get_status_for_core(1),get_status_for_core(2),get_status_for_core(3),get_status_for_core(4)};
 
-    struct miralis_status res = {
-        .world_switches = get_measure(WORLD_SWITCH);
-        .read_time = get_measure(TIME_READ);
-        .timer_request = get_measure(SET_TIMER);
-        .misaligned_op = get_measure(MISALIGNED_OP)
-        .ipi_request = get_measure(IPI);
-        .remote_fence = get_measure(REMOTE_FENCE);
-        .firmware_exits = get_measure(FIRMWARE_TRAP),
-    };
-
-    // TODO: Set the time properly
-    printk(KERN_INFO "[ %lld | %lld | %lld | %lld | %lld | %lld | %lld | %lld ]\n",
+    printk(KERN_INFO "Timestamp: %lld [ %lld | %lld | %lld | %lld | %lld | %lld | %lld ] \
+        & [ %lld | %lld | %lld | %lld | %lld | %lld | %lld ] \
+        & [ %lld | %lld | %lld | %lld | %lld | %lld | %lld ] \
+        & [ %lld | %lld | %lld | %lld | %lld | %lld | %lld ]\n",
         ktime_get_real_ns(),  
-        res.world_switches, 
-        res.read_time, 
-        res.timer_request, 
-        res.misaligned_op, 
-        res.ipi_request, 
-        res.remote_fence, 
-        res.firmware_exits
+        res[0].world_switches, 
+        res[0].read_time, 
+        res[0].timer_request, 
+        res[0].misaligned_op, 
+        res[0].ipi_request, 
+        res[0].remote_fence, 
+        res[0].firmware_exits,
+        res[1].world_switches, 
+        res[1].read_time, 
+        res[1].timer_request, 
+        res[1].misaligned_op, 
+        res[1].ipi_request, 
+        res[1].remote_fence, 
+        res[1].firmware_exits,
+        res[2].world_switches, 
+        res[2].read_time, 
+        res[2].timer_request, 
+        res[2].misaligned_op, 
+        res[2].ipi_request, 
+        res[2].remote_fence, 
+        res[2].firmware_exits,
+        res[3].world_switches, 
+        res[3].read_time, 
+        res[3].timer_request, 
+        res[3].misaligned_op, 
+        res[3].ipi_request, 
+        res[3].remote_fence, 
+        res[3].firmware_exits
     );
 
     if (*offset >= 16) {
         return 0; 
-    }
+}
 
     size_t bytes_to_copy = min(count, (size_t)(16 - *offset));
     if (copy_to_user(buffer, buffer + *offset, bytes_to_copy)) {
