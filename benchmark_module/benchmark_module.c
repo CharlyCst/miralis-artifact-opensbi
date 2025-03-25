@@ -21,6 +21,7 @@
 #define MISALIGNED_OP 3
 #define IPI 4
 #define REMOTE_FENCE 5
+#define PAGE_FAULTS 7
 #define FIRMWARE_TRAP 6
 
 // Struct declarations
@@ -32,6 +33,7 @@ struct miralis_status {
     uint64_t misaligned_op;
     uint64_t ipi_request;
     uint64_t remote_fence;
+    uint64_t page_faults;
     uint64_t firmware_exits;
 };
 
@@ -83,6 +85,7 @@ struct miralis_status get_status_for_core(unsigned int hart_id) {
         .misaligned_op = get_measure(MISALIGNED_OP, hart_id),
         .ipi_request = get_measure(IPI, hart_id),
         .remote_fence = get_measure(REMOTE_FENCE, hart_id),
+        .page_faults = get_measure(PAGE_FAULTS, hart_id),
         .firmware_exits = get_measure(FIRMWARE_TRAP, hart_id)
     };
 
@@ -91,12 +94,12 @@ struct miralis_status get_status_for_core(unsigned int hart_id) {
 
 static ssize_t miralis_read(struct file *file, char __user *buffer, size_t count, loff_t *offset) {
     // TODO: Ask the core dynamically until we get 0 values
-    struct miralis_status res[4] = {get_status_for_core(1),get_status_for_core(2),get_status_for_core(3),get_status_for_core(4)};
+    struct miralis_status res[4] = {get_status_for_core(0),get_status_for_core(1),get_status_for_core(2),get_status_for_core(3)};
 
-    printk(KERN_INFO "Timestamp: %lld [ %lld | %lld | %lld | %lld | %lld | %lld | %lld ] \
-        & [ %lld | %lld | %lld | %lld | %lld | %lld | %lld ] \
-        & [ %lld | %lld | %lld | %lld | %lld | %lld | %lld ] \
-        & [ %lld | %lld | %lld | %lld | %lld | %lld | %lld ]\n",
+    printk(KERN_INFO "Timestamp: %lld [ %lld | %lld | %lld | %lld | %lld | %lld | %lld | %lld ] \
+        & [ %lld | %lld | %lld | %lld | %lld | %lld | %lld | %lld ] \
+        & [ %lld | %lld | %lld | %lld | %lld | %lld | %lld | %lld ] \
+        & [ %lld | %lld | %lld | %lld | %lld | %lld | %lld | %lld ]\n",
         ktime_get_real_ns(),  
         res[0].world_switches, 
         res[0].read_time, 
@@ -105,6 +108,7 @@ static ssize_t miralis_read(struct file *file, char __user *buffer, size_t count
         res[0].ipi_request, 
         res[0].remote_fence, 
         res[0].firmware_exits,
+        res[0].page_faults,
         res[1].world_switches, 
         res[1].read_time, 
         res[1].timer_request, 
@@ -112,6 +116,7 @@ static ssize_t miralis_read(struct file *file, char __user *buffer, size_t count
         res[1].ipi_request, 
         res[1].remote_fence, 
         res[1].firmware_exits,
+        res[1].page_faults,
         res[2].world_switches, 
         res[2].read_time, 
         res[2].timer_request, 
@@ -119,13 +124,15 @@ static ssize_t miralis_read(struct file *file, char __user *buffer, size_t count
         res[2].ipi_request, 
         res[2].remote_fence, 
         res[2].firmware_exits,
+        res[2].page_faults,
         res[3].world_switches, 
         res[3].read_time, 
         res[3].timer_request, 
         res[3].misaligned_op, 
         res[3].ipi_request, 
         res[3].remote_fence, 
-        res[3].firmware_exits
+        res[3].firmware_exits,
+        res[3].page_faults
     );
 
     if (*offset >= 16) {
