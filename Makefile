@@ -4,7 +4,7 @@ LINUX = linux_shell linux_exit linux_driver linux_lock
 OPEN_SBI = opensbi.bin opensbi_jump.bin
 UBOOT = u-boot u-boot-exit
 
-all:  $(UBOOT) $(OPEN_SBI) $(TARGETS_LINUX_BIN) 
+all:  benchmark_module $(UBOOT) $(OPEN_SBI) $(TARGETS_LINUX_BIN) 
 
 CROSS_COMPILE = riscv64-linux-gnu-
 PATCHES = ../miralis_firmware.patch
@@ -44,6 +44,11 @@ $(LINUX):
 lock_module:
 	cd lock_module; make all
 	cp lock_module/lock_module.ko ramfs-riscv/bin/lock_module.ko
+
+benchmark_module: linux_exit
+benchmark_module: 
+	cd benchmark_module; make all
+	cp benchmark_module/benchmark_module.ko ramfs-riscv/bin/benchmark_module.ko
 
 driver:
 	make -C linux M=$(DRIVER_PATH) modules ARCH=riscv CROSS_COMPILE=$(CROSS_COMPILE)
@@ -109,3 +114,15 @@ u-boot-exit:
 
 clean:
 	-rm -rf u-boot opensbi linux *.bin *.elf *.cpio.gz
+
+
+module_board:
+	git clone https://github.com/starfive-tech/VisionFive2.git
+	cd VisionFive2
+	git checkout --track origin/JH7110_VisionFive2_devel
+	git submodule update --init --recursive
+	cd linux && git branch JH7110_VisionFive2_devel origin/JH7110_VisionFive2_devel && cd ..
+
+generate: benchmark_module opensbi-linux-shell.bin
+	mv opensbi-linux-kernel-shell.bin linux-shell
+	cp linux-shell ../miralis/artifacts

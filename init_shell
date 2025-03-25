@@ -1,7 +1,12 @@
 #!/bin/sh
 
-mount -t proc none /proc
+mkdir /proc
+mount -t proc proc /proc
+
+# TODO: Is it really working?
 mount -t sysfs none /sys
+
+insmod /bin/benchmark_module.ko
 
 cat <<!
 
